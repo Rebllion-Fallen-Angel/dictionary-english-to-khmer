@@ -5,10 +5,21 @@ class Register extends StatelessWidget {
 
   final GlobalKey<FormState> formKey = new GlobalKey<FormState>();
 
+  void _handleRegister() {
+    if (formKey.currentState!.validate()) {
+      print('form is valid');
+    } else {
+      print('form is not valid');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: BackButton(
+          color: Colors.white,
+        ),
         title: Text(
           'Register',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
@@ -24,6 +35,7 @@ class Register extends StatelessWidget {
             children: [
               SizedBox(height: 20),
               TextFormField(
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
@@ -58,8 +70,49 @@ class Register extends StatelessWidget {
               ),
               SizedBox(height: 20),
               TextFormField(
+                textInputAction: TextInputAction.next,
+                obscureText: true,
+                obscuringCharacter: '*',
                 decoration: InputDecoration(
                   labelText: 'Password',
+                  hintText: 'Enter your password',
+                  prefixIcon: Icon(Icons.password),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                ),
+                validator: (value) {
+                  RegExp reg = RegExp(
+                    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
+                  );
+                  if (!reg.hasMatch(value!)) {
+                    return 'Password is not valid';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                textInputAction: TextInputAction.done,
+                obscureText: true,
+                obscuringCharacter: '*',
+                onFieldSubmitted: (_) => _handleRegister(),
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
                   hintText: 'Enter your password',
                   prefixIcon: Icon(Icons.password),
                   filled: true,
@@ -93,10 +146,11 @@ class Register extends StatelessWidget {
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    print('form is valid');
-                  } else
-                    print('form is not valid');
+                  // if (formKey.currentState!.validate()) {
+                  //   print('form is valid');
+                  // } else
+                  //   print('form is not valid');
+                  _handleRegister();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,

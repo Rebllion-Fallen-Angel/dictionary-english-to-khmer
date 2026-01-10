@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
 
   final GlobalKey<FormState> formKey = new GlobalKey<FormState>();
+
+  void _handleLogin() {
+    if (formKey.currentState!.validate()) {
+      print('form is valid');
+    } else {
+      print('form is not valid');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +33,7 @@ class LoginScreen extends StatelessWidget {
             children: [
               SizedBox(height: 20),
               TextFormField(
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
@@ -58,6 +68,10 @@ class LoginScreen extends StatelessWidget {
               ),
               SizedBox(height: 20),
               TextFormField(
+                textInputAction: TextInputAction.done,
+                obscureText: true,
+                obscuringCharacter: '*',
+                onFieldSubmitted: (_) => _handleLogin(),
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
@@ -93,10 +107,11 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    print('form is valid');
-                  } else
-                    print('form is not valid');
+                  // if (formKey.currentState!.validate()) {
+                  //   print('form is valid');
+                  // } else
+                  //   print('form is not valid');
+                  _handleLogin();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueAccent,
@@ -121,20 +136,24 @@ class LoginScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("Don't have an account?"),
-                  GestureDetector(
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
                     onTap: () {
-                      print('Go to register page');
+                      Get.toNamed('/register');
                     },
-                    child: Text(
-                      ' Sign Up',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                      child: Text(
+                        ' Sign Up',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
