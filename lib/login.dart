@@ -1,14 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
+  final String url = "https://nubbdictapi.kode4u.tech";
 
   final GlobalKey<FormState> formKey = new GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  void login(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$url/api/auth/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": email, "password": password}),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("token", data["token"]);
+        Get.offAllNamed('/home');
+      } 
+      else if (response.statusCode == 400) {
+        final Map<String, dynamic> errorData = jsonDecode(response.body);
+        print('Error: ${errorData['error']}');
+        Get.snackbar("Error", errorData['error']);
+      } else {
+        print('Failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
   void _handleLogin() {
     if (formKey.currentState!.validate()) {
-      print('form is valid');
+      login(_emailController.text, _passwordController.text);
     } else {
       print('form is not valid');
     }
@@ -34,6 +66,7 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 20),
               TextFormField(
                 textInputAction: TextInputAction.next,
+                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
@@ -69,6 +102,7 @@ class LoginScreen extends StatelessWidget {
               SizedBox(height: 20),
               TextFormField(
                 textInputAction: TextInputAction.done,
+                controller: _passwordController,
                 obscureText: true,
                 obscuringCharacter: '*',
                 onFieldSubmitted: (_) => _handleLogin(),

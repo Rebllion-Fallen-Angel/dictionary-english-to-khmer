@@ -1,13 +1,58 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
 class Register extends StatelessWidget {
   Register({super.key});
 
+  final String url = "https://nubbdictapi.kode4u.tech";
+
   final GlobalKey<FormState> formKey = new GlobalKey<FormState>();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  void register(String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$url/api/auth/signup"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"name": name, "email": email, "password": password}),
+      );
+
+      if (response.statusCode == 201) {
+      // 1. Decode the response body
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      
+      // 2. Access and print the token
+      final String token = data['token'];
+      print('Registration Successful!');
+      print('Token: $token'); 
+
+      Get.offAllNamed('/login');
+
+    } else if (response.statusCode == 400) {
+      final Map<String, dynamic> errorData = jsonDecode(response.body);
+      print('Error: ${errorData['error']}');
+      Get.snackbar("Error", errorData['error']);
+    } else {
+      print('Failed with status: ${response.statusCode}');
+    }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
 
   void _handleRegister() {
     if (formKey.currentState!.validate()) {
-      print('form is valid');
+      register(
+        _nameController.text,
+        _emailController.text,
+        _passwordController.text,
+      );
     } else {
       print('form is not valid');
     }
@@ -17,9 +62,7 @@ class Register extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(
-          color: Colors.white,
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Register',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
@@ -36,6 +79,41 @@ class Register extends StatelessWidget {
               SizedBox(height: 20),
               TextFormField(
                 textInputAction: TextInputAction.next,
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'Enter your name',
+                  prefixIcon: Icon(Icons.person),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                ),
+                validator: (value) {
+                  RegExp name = RegExp(r'^[A-Za-z ]{2,50}$');
+                  if (!name.hasMatch(value!)) {
+                    return 'Name is not valid';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                textInputAction: TextInputAction.next,
+                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   hintText: 'Enter your email',
@@ -59,10 +137,10 @@ class Register extends StatelessWidget {
                   ),
                 ),
                 validator: (value) {
-                  RegExp reg = RegExp(
+                  RegExp email = RegExp(
                     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                   );
-                  if (!reg.hasMatch(value!)) {
+                  if (!email.hasMatch(value!)) {
                     return 'Email is not valid';
                   }
                   return null;
@@ -73,6 +151,7 @@ class Register extends StatelessWidget {
                 textInputAction: TextInputAction.next,
                 obscureText: true,
                 obscuringCharacter: '*',
+                controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   hintText: 'Enter your password',
@@ -96,10 +175,10 @@ class Register extends StatelessWidget {
                   ),
                 ),
                 validator: (value) {
-                  RegExp reg = RegExp(
+                  RegExp password = RegExp(
                     r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
                   );
-                  if (!reg.hasMatch(value!)) {
+                  if (!password.hasMatch(value!)) {
                     return 'Password is not valid';
                   }
                   return null;
@@ -134,11 +213,11 @@ class Register extends StatelessWidget {
                   ),
                 ),
                 validator: (value) {
-                  RegExp reg = RegExp(
-                    r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
-                  );
-                  if (!reg.hasMatch(value!)) {
-                    return 'Password is not valid';
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your password';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
                   }
                   return null;
                 },
@@ -146,10 +225,6 @@ class Register extends StatelessWidget {
               SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  // if (formKey.currentState!.validate()) {
-                  //   print('form is valid');
-                  // } else
-                  //   print('form is not valid');
                   _handleRegister();
                 },
                 style: ElevatedButton.styleFrom(
@@ -169,6 +244,29 @@ class Register extends StatelessWidget {
                     letterSpacing: 0.4,
                   ),
                 ),
+              ),
+              SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Have already an account?"),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      Get.offAllNamed('/login');
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                      child: Text(
+                        ' Sign In',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
