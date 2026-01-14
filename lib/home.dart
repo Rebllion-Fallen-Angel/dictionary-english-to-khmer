@@ -12,10 +12,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  List<Map<String, dynamic>> wordData = [];
   String? _userEmail;
   bool _isLoading = true;
 
-  final String apiUrl = "https://nubbdictapi.kode4u.tech";
+  final String url = "https://nubbdictapi.kode4u.tech";
 
   @override
   void initState() {
@@ -28,13 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
     String? token = prefs.getString("token");
 
     if (token == null) {
-      Get.offAllNamed('/login'); 
+      Get.offAllNamed('/login');
       return;
     }
 
     try {
       final response = await http.get(
-        Uri.parse("$apiUrl/api/auth/me"),
+        Uri.parse("$url/api/auth/me"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
@@ -46,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _userEmail = userData['user']['name'];
           _isLoading = false;
+          _loadWords();
         });
       } else {
         // Token might be expired or invalid
@@ -54,6 +58,34 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       print("Error loading user data: $e");
       _logout();
+    }
+  }
+
+  Future<void> _loadWords() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString("token");
+    try {
+      final response = await http.get(
+        Uri.parse("$url/api/dictionary"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+      if (jsonResponse is Map && jsonResponse.containsKey('words')) {
+        final words = jsonResponse['words'] as List;
+        setState(() {
+          wordData = words.cast<Map<String, dynamic>>();
+          _isLoading = false;
+        });
+      } else {
+        var errorData = jsonDecode(response.body);
+        print('Error: ${errorData['error']}');
+      }
+    } catch (e) {
+      print("Error fetching word: $e");
     }
   }
 
@@ -66,23 +98,52 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Home"),
+        title: Text(
+          "វចនានុក្រម អង់គ្លេស-ខ្មេរ",
+          style: TextStyle(color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(255, 30, 99, 156),
         actions: [
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: Icon(Icons.logout, color: Colors.white),
             onPressed: _logout,
           ),
         ],
       ),
-      body: Center(
-        child: Text("Welcome, $_userEmail!"),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "ស្វែងរកពាក្យ...",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: wordData.length,
+              itemBuilder: (context, index) {
+                final item = wordData[index];
+                return ListTile(
+                  title: Text("ពាក្យ ${item['englishWord']}"),
+                  subtitle: Text(
+                    "ន័យរបស់ពាក្យ ${item['khmerPhonetic']}",
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

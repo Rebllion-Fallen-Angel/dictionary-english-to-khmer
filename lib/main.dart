@@ -3,7 +3,6 @@ import 'package:directionay_english_khmer/login.dart';
 import 'package:directionay_english_khmer/register.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 void main() {
   runApp(
     GetMaterialApp(
