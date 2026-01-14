@@ -132,12 +132,48 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: ListView.builder(
               itemCount: wordData.length,
+              padding: const EdgeInsets.symmetric(vertical: 8),
               itemBuilder: (context, index) {
                 final item = wordData[index];
-                return ListTile(
-                  title: Text("ពាក្យ ${item['englishWord']}"),
-                  subtitle: Text(
-                    "ន័យរបស់ពាក្យ ${item['khmerPhonetic']}",
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['englishWord'] ?? '—',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.indigo,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item['partOfSpeech'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Icon(Icons.arrow_forward_ios)
+                      ],
+                    ),
                   ),
                 );
               },
