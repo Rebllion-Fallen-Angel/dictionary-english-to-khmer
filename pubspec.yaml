@@ -9,7 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_widget_from_html: ^0.16.1
   get: ^4.7.3
+  google_fonts: ^4.0.4
   http: ^0.13.0
   shared_preferences: ^2.5.3
 
@@ -20,3 +22,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: NotoSansKhmer
+      fonts:
+        - asset: asset/static/NotoSansKhmer_Condensed-Regular.ttf
