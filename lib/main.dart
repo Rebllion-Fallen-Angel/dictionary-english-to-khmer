@@ -1,6 +1,9 @@
+import 'package:directionay_english_khmer/favorite.dart';
 import 'package:directionay_english_khmer/home.dart';
 import 'package:directionay_english_khmer/login.dart';
+import 'package:directionay_english_khmer/navigator_page.dart';
 import 'package:directionay_english_khmer/register.dart';
+import 'package:directionay_english_khmer/setting.dart';
 import 'package:directionay_english_khmer/worddetail.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -15,6 +18,9 @@ void main() {
         GetPage(name: '/register', page: () => Register()),
         GetPage(name: '/home', page: () => HomeScreen()),
         GetPage(name: '/wordDetail', page: () => WordDetail()),
+        GetPage(name: '/favorite', page: () => Favorite()),
+        GetPage(name: '/user', page: () => Setting()),
+        GetPage(name: '/nav', page: () => NavigationPage())
       ],
       initialRoute: '/login',
     ),

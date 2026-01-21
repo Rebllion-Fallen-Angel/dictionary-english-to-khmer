@@ -13,9 +13,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FavoriteController favController = Get.put(FavoriteController());
 
   List<Map<String, dynamic>> wordData = [];
-  String? _userEmail;
+  List<Map<String, dynamic>> _allWords = [];
+  // String? _userEmail;
   bool _isLoading = true;
 
   final String url = "https://nubbdictapi.kode4u.tech";
@@ -45,19 +47,19 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (response.statusCode == 200) {
-        final userData = jsonDecode(response.body);
+        // final userData = jsonDecode(response.body);
         setState(() {
-          _userEmail = userData['user']['name'];
+          // _userEmail = userData['user']['name'];
           _isLoading = false;
           _loadWords();
         });
       } else {
         // Token might be expired or invalid
-        _logout();
+        // _logout();
       }
     } catch (e) {
       print("Error loading user data: $e");
-      _logout();
+      // _logout();
     }
   }
 
@@ -73,11 +75,13 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       );
 
-      final jsonResponse = jsonDecode(response.body);
+      final decodedBody = utf8.decode(response.bodyBytes);
+      final jsonResponse = jsonDecode(decodedBody);
       if (jsonResponse is Map && jsonResponse.containsKey('words')) {
         final words = jsonResponse['words'] as List;
         setState(() {
-          wordData = words.cast<Map<String, dynamic>>();
+          _allWords = words.cast<Map<String, dynamic>>();
+          wordData = List.from(_allWords);
           _isLoading = false;
         });
       } else {
@@ -89,11 +93,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("token");
-    Get.offAllNamed('/login');
+  void _filterWords(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) {
+      setState(() {
+        wordData = List.from(_allWords);
+      });
+      return;
+    }
+
+    setState(() {
+      wordData =
+          _allWords
+              .where(
+                (w) => (w['englishWord'] ?? '')
+                    .toString()
+                    .toLowerCase()
+                    .contains(q),
+              )
+              .cast<Map<String, dynamic>>()
+              .toList();
+    });
   }
+
+  // void _logout() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.remove("token");
+  //   Get.offAllNamed('/login');
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -110,12 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
         toolbarHeight: 70,
         centerTitle: true,
         backgroundColor: Colors.indigo,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: Colors.white),
-            onPressed: _logout,
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.logout, color: Colors.white),
+        //     onPressed: _logout,
+        //   ),
+        // ],
       ),
       body: Column(
         children: [
@@ -126,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: TextField(
                 controller: _searchController,
+                onChanged: (v) => _filterWords(v),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
@@ -135,6 +163,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderSide: BorderSide.none,
                   ),
                   prefixIcon: Icon(Icons.search),
+                  suffixIcon:
+                      _searchController.text.isNotEmpty
+                          ? IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _filterWords('');
+                            },
+                          )
+                          : null,
                 ),
               ),
             ),
@@ -185,7 +223,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ],
                           ),
-                          Icon(Icons.arrow_forward_ios, color: Colors.indigo),
+                          Row(
+                            children: [
+                              Obx(
+                                () => IconButton(
+                                  icon: Icon(
+                                    favController.isFavorite(item)
+                                        ? Icons.bookmark
+                                        : Icons.bookmark_border,
+                                    color:
+                                        favController.isFavorite(item)
+                                            ? Colors.indigo
+                                            : null,
+                                  ),
+                                  onPressed:
+                                      () => favController.toggleFavorite(item),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -197,5 +253,72 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+}
+
+class FavoriteController extends GetxController {
+  // Reactive list storing favorite word maps
+  var favoriteList = <dynamic>[].obs;
+
+  static const String _prefsKey = 'favorites';
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadFavorites();
+  }
+
+  // Load favorites from SharedPreferences
+  Future<void> loadFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_prefsKey);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final decoded = jsonDecode(jsonStr) as List;
+        favoriteList.assignAll(decoded.cast<dynamic>());
+      }
+    } catch (e) {
+      print('Failed loading favorites: $e');
+    }
+  }
+
+  // Save favorites to SharedPreferences
+  Future<void> saveFavorites() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefsKey, jsonEncode(favoriteList.toList()));
+    } catch (e) {
+      print('Failed saving favorites: $e');
+    }
+  }
+
+  // Toggle favorite by a stable key (englishWord)
+  void toggleFavorite(dynamic item) {
+    final key = item['englishWord']?.toString();
+    if (key == null) return;
+
+    final existingIndex = favoriteList.indexWhere(
+      (i) => i['englishWord']?.toString() == key,
+    );
+    if (existingIndex >= 0) {
+      favoriteList.removeAt(existingIndex);
+    } else {
+      favoriteList.add(item);
+    }
+
+    saveFavorites();
+  }
+
+  // Check if an item is favorited by englishWord
+  bool isFavorite(dynamic item) {
+    final key = item['englishWord']?.toString();
+    if (key == null) return false;
+    return favoriteList.any((i) => i['englishWord']?.toString() == key);
   }
 }

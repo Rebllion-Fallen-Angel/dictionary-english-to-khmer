@@ -24,7 +24,7 @@ class LoginScreen extends StatelessWidget {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString("token", data["token"]);
-        Get.offAllNamed('/home');
+        Get.offAllNamed('/nav');
       } 
       else if (response.statusCode == 400) {
         final Map<String, dynamic> errorData = jsonDecode(response.body);

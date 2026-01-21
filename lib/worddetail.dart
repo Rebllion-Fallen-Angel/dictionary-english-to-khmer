@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
-
-
+import 'package:directionay_english_khmer/home.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 class WordDetail extends StatelessWidget {
   final word = Get.arguments as Map<String, dynamic>? ?? {};
+  final FavoriteController favController =
+      Get.isRegistered<FavoriteController>()
+          ? Get.find<FavoriteController>()
+          : Get.put(FavoriteController());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,7 +23,18 @@ class WordDetail extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.indigo,
         actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.bookmark_border, size: 25,)),
+          Obx(
+            () => IconButton(
+              onPressed: () => favController.toggleFavorite(word),
+              icon: Icon(
+                favController.isFavorite(word)
+                    ? Icons.bookmark
+                    : Icons.bookmark_border,
+                size: 25,
+                color: favController.isFavorite(word) ? Colors.red : null,
+              ),
+            ),
+          ),
         ],
       ),
       body: Column(
@@ -42,7 +57,7 @@ class WordDetail extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 32,
                               color: Colors.indigo,
-                              fontWeight: FontWeight.bold
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           SizedBox(height: 20),
@@ -54,27 +69,25 @@ class WordDetail extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.indigo[100],
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey,
-                                width: 1,
-                              )
+                              border: Border.all(color: Colors.grey, width: 1),
                             ),
                             child: Text(
                               word['partOfSpeech'],
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.indigo
+                                color: Colors.indigo,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      IconButton(onPressed: () {
-
-                      }, 
-                        icon: Icon(Icons.volume_up, 
-                        size: 30,
-                        color: Colors.indigo,)
+                      IconButton(
+                        onPressed: () {},
+                        icon: Icon(
+                          Icons.volume_up,
+                          size: 30,
+                          color: Colors.indigo,
+                        ),
                       ),
                     ],
                   ),
@@ -91,14 +104,29 @@ class WordDetail extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: HtmlWidget(
-                    word['khmerDef'],
-                    textStyle: TextStyle(
-                      fontSize: 14,
-                      fontFamily: 'NotoSansKhmer'
-                    ),
+                  child: Html(
+                    data: word['khmerDef'].toString(),
+                    style: {
+                      "body": Style(
+                        fontFamily: 'Battambang',
+                        fontSize: FontSize(16),
+                      ),
+                      // "p": Style(
+                      //   fontFamily: 'Battambang',
+                      //   fontSize: FontSize(14),
+                      // ),
+                      // "div": Style(
+                      //   fontFamily: 'Battambang',
+                      //   fontSize: FontSize(14),
+                      // ),
+
+                      // "*": Style(
+                      //   fontFamily: 'Battambang',
+                      //   fontSize: FontSize(14),
+                      // ),
+                    },
                   ),
-                )
+                ),
               ],
             ),
           ),
